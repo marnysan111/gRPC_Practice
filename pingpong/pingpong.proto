@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "github.com/marnysan111/gRPC_Practice/pingpong";
+option java_multiple_files = true;
+option java_outer_classname = "PingPongProto";
+
+package pingpong;
+
+service PingPong {
+    rpc PingPong (PingReqest) returns (PingReply) {}
+}
+
+message PingReqest {
+    string ping = 1;
+}
+
+message PingReply {
+    string pong = 1;
+}
