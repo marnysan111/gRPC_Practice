@@ -72,9 +72,10 @@ func main() {
 		stream, err := c.PingPongClientStream(context.Background())
 		if err != nil {
 			log.Fatalln("could not pingpong: ", err)
+			return
 		}
 		reqCount := 5
-		fmt.Println("Please enter 5 ping")
+		fmt.Printf("Please enter %d ping", reqCount)
 		for i := 0; i < reqCount; i++ {
 			// 標準入力を受け付けたい
 			var ping string
@@ -95,7 +96,48 @@ func main() {
 			return
 		}
 		fmt.Println((res.GetPong()))
-
+	case "bi":
+		stream, err := c.PingPongBiStreams(context.Background())
+		if err != nil {
+			log.Fatalln("could not pingpong: ", err)
+			return
+		}
+		sendNum := 5
+		fmt.Printf("Please enter %d pingpong\n", sendNum)
+		var sendEnd, recvEnd bool
+		sendCount := 0
+		for !(sendEnd && recvEnd) {
+			if !sendEnd {
+				var ping string
+				_, err := fmt.Scanln(&ping)
+				if err != nil {
+					log.Fatalln("could not scanln: ", err)
+				}
+				sendCount++
+				if err := stream.Send(&pb.PingReqest{
+					Ping: ping,
+				}); err != nil {
+					log.Fatalln("stream send error: ", err)
+					//sendEnd = true
+				}
+				// if sendCount == sendNum {
+				// 	sendEnd = true
+				// 	if err := stream.CloseSend(); err != nil {
+				// 		log.Fatalln("stream close error: ", err)
+				// 	}
+				// }
+			}
+			if !recvEnd {
+				if res, err := stream.Recv(); err != nil {
+					if !errors.Is(err, io.EOF) {
+						log.Fatalln("recvEnd error: ", err)
+					}
+					recvEnd = true
+				} else {
+					fmt.Println(res.GetPong())
+				}
+			}
+		}
 	default:
 		fmt.Println("No Stream Type")
 	}

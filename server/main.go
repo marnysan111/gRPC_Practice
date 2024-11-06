@@ -10,7 +10,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/marnysan111/gRPC_Practice/pingpong"
 	pb "github.com/marnysan111/gRPC_Practice/pingpong"
 	"google.golang.org/grpc"
 )
@@ -29,10 +28,10 @@ func (s *server) PingPong(_ context.Context, in *pb.PingReqest) (*pb.PingRespons
 	return &pb.PingResponse{Pong: "Hello " + in.GetPing()}, nil
 }
 
-func (s *server) PingPongServerStream(req *pingpong.PingReqest, stream grpc.ServerStreamingServer[pingpong.PingResponse]) error {
+func (s *server) PingPongServerStream(req *pb.PingReqest, stream grpc.ServerStreamingServer[pb.PingResponse]) error {
 	resCount := 5
 	for i := 0; i < resCount; i++ {
-		if err := stream.Send(&pingpong.PingResponse{
+		if err := stream.Send(&pb.PingResponse{
 			Pong: fmt.Sprintf("Hello, [%d] ServerStreaming:%s", i, req.GetPing()),
 		}); err != nil {
 			return err
@@ -48,7 +47,7 @@ func (s *server) PingPongClientStream(stream pb.PingPong_PingPongClientStreamSer
 		req, err := stream.Recv()
 		if errors.Is(err, io.EOF) {
 			fmt.Println("recived pingpong list: ", pingList)
-			pong := fmt.Sprintf("PingPong!, %v", pingList)
+			pong := fmt.Sprintf("Hello, ClientStreaming!, %v", pingList)
 			return stream.SendAndClose(&pb.PingResponse{
 				Pong: pong,
 			})
@@ -57,6 +56,25 @@ func (s *server) PingPongClientStream(stream pb.PingPong_PingPongClientStreamSer
 			return err
 		}
 		pingList = append(pingList, req.GetPing())
+	}
+}
+
+func (s *server) PingPongBiStreams(stream pb.PingPong_PingPongBiStreamsServer) error {
+	for {
+		req, err := stream.Recv()
+		if errors.Is(err, io.EOF) {
+			return err
+		}
+		if err != nil {
+			return err
+		}
+		pong := fmt.Sprintf("Hello, BiStreaming!, %v", req.GetPing())
+		if err := stream.Send(&pb.PingResponse{
+			Pong: pong,
+		}); err != nil {
+			return err
+		}
+
 	}
 }
 
