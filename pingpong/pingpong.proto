@@ -7,13 +7,17 @@ option java_outer_classname = "PingPongProto";
 package pingpong;
 
 service PingPong {
-    rpc PingPong (PingReqest) returns (PingReply) {}
+    rpc PingPong (PingReqest) returns (PingResponse) {}
+    // ServerStreamingはreturnsにstreamをつける
+    rpc PingPongServerStream (PingReqest) returns (stream PingResponse) {}
+    // ClientStreamingは引数にstreamをつける
+    //rpc PingPongClientStream (stream PingReqest) returns (PingResponse) {}
 }
 
 message PingReqest {
     string ping = 1;
 }
 
-message PingReply {
+message PingResponse {
     string pong = 1;
 }
