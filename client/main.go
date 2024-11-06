@@ -23,7 +23,9 @@ var (
 func main() {
 	flag.Parse()
 	// ２つ目の引数なんだ？オプションっぽいけど
-	conn, err := grpc.NewClient(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// grpc.WithTransportCredentialsはコネクションでSSL/TLSを使用しないオプション
+	// 前まではgrpc.Dialっていう関数でコネクションを作っていたが、今は非推奨
+	conn, err := grpc.NewClient(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	if err != nil {
 		log.Fatalln("failed to connect: ", err)
 	}

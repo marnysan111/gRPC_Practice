@@ -19,6 +19,7 @@ type server struct {
 	pb.UnimplementedPingPongServer
 }
 
+// contextってあるけど、いつ使うんだろ。ってかなんで引数として存在してるんだ？使ってないのに
 func (s *server) PingPong(_ context.Context, in *pb.PingReqest) (*pb.PingReply, error) {
 	log.Println("Received: ", in.GetPing())
 	return &pb.PingReply{Pong: "Hello " + in.GetPing()}, nil
