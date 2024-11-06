@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	PingPong_PingPong_FullMethodName             = "/pingpong.PingPong/PingPong"
 	PingPong_PingPongServerStream_FullMethodName = "/pingpong.PingPong/PingPongServerStream"
+	PingPong_PingPongClientStream_FullMethodName = "/pingpong.PingPong/PingPongClientStream"
 )
 
 // PingPongClient is the client API for PingPong service.
@@ -30,6 +31,8 @@ type PingPongClient interface {
 	PingPong(ctx context.Context, in *PingReqest, opts ...grpc.CallOption) (*PingResponse, error)
 	// ServerStreamingはreturnsにstreamをつける
 	PingPongServerStream(ctx context.Context, in *PingReqest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[PingResponse], error)
+	// ClientStreamingは引数にstreamをつける
+	PingPongClientStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[PingReqest, PingResponse], error)
 }
 
 type pingPongClient struct {
@@ -69,6 +72,19 @@ func (c *pingPongClient) PingPongServerStream(ctx context.Context, in *PingReqes
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type PingPong_PingPongServerStreamClient = grpc.ServerStreamingClient[PingResponse]
 
+func (c *pingPongClient) PingPongClientStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[PingReqest, PingResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &PingPong_ServiceDesc.Streams[1], PingPong_PingPongClientStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[PingReqest, PingResponse]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type PingPong_PingPongClientStreamClient = grpc.ClientStreamingClient[PingReqest, PingResponse]
+
 // PingPongServer is the server API for PingPong service.
 // All implementations must embed UnimplementedPingPongServer
 // for forward compatibility.
@@ -76,6 +92,8 @@ type PingPongServer interface {
 	PingPong(context.Context, *PingReqest) (*PingResponse, error)
 	// ServerStreamingはreturnsにstreamをつける
 	PingPongServerStream(*PingReqest, grpc.ServerStreamingServer[PingResponse]) error
+	// ClientStreamingは引数にstreamをつける
+	PingPongClientStream(grpc.ClientStreamingServer[PingReqest, PingResponse]) error
 	mustEmbedUnimplementedPingPongServer()
 }
 
@@ -91,6 +109,9 @@ func (UnimplementedPingPongServer) PingPong(context.Context, *PingReqest) (*Ping
 }
 func (UnimplementedPingPongServer) PingPongServerStream(*PingReqest, grpc.ServerStreamingServer[PingResponse]) error {
 	return status.Errorf(codes.Unimplemented, "method PingPongServerStream not implemented")
+}
+func (UnimplementedPingPongServer) PingPongClientStream(grpc.ClientStreamingServer[PingReqest, PingResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method PingPongClientStream not implemented")
 }
 func (UnimplementedPingPongServer) mustEmbedUnimplementedPingPongServer() {}
 func (UnimplementedPingPongServer) testEmbeddedByValue()                  {}
@@ -142,6 +163,13 @@ func _PingPong_PingPongServerStream_Handler(srv interface{}, stream grpc.ServerS
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type PingPong_PingPongServerStreamServer = grpc.ServerStreamingServer[PingResponse]
 
+func _PingPong_PingPongClientStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(PingPongServer).PingPongClientStream(&grpc.GenericServerStream[PingReqest, PingResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type PingPong_PingPongClientStreamServer = grpc.ClientStreamingServer[PingReqest, PingResponse]
+
 // PingPong_ServiceDesc is the grpc.ServiceDesc for PingPong service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -159,6 +187,11 @@ var PingPong_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "PingPongServerStream",
 			Handler:       _PingPong_PingPongServerStream_Handler,
 			ServerStreams: true,
+		},
+		{
+			StreamName:    "PingPongClientStream",
+			Handler:       _PingPong_PingPongClientStream_Handler,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "pingpong.proto",

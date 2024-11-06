@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"time"
@@ -38,6 +40,24 @@ func (s *server) PingPongServerStream(req *pingpong.PingReqest, stream grpc.Serv
 		time.Sleep(time.Second * 1)
 	}
 	return nil
+}
+
+func (s *server) PingPongClientStream(stream pb.PingPong_PingPongClientStreamServer) error {
+	pingList := make([]string, 0)
+	for {
+		req, err := stream.Recv()
+		if errors.Is(err, io.EOF) {
+			fmt.Println("recived pingpong list: ", pingList)
+			pong := fmt.Sprintf("PingPong!, %v", pingList)
+			return stream.SendAndClose(&pb.PingResponse{
+				Pong: pong,
+			})
+		}
+		if err != nil {
+			return err
+		}
+		pingList = append(pingList, req.GetPing())
+	}
 }
 
 func main() {

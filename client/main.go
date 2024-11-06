@@ -68,6 +68,34 @@ func main() {
 			}
 			fmt.Println(req)
 		}
+	case "client":
+		stream, err := c.PingPongClientStream(context.Background())
+		if err != nil {
+			log.Fatalln("could not pingpong: ", err)
+		}
+		reqCount := 5
+		fmt.Println("Please enter 5 ping")
+		for i := 0; i < reqCount; i++ {
+			// 標準入力を受け付けたい
+			var ping string
+			_, err := fmt.Scanln(&ping)
+			if err != nil {
+				log.Fatalln("could not scanln: ", err)
+			}
+			if err = stream.Send(&pb.PingReqest{
+				Ping: ping,
+			}); err != nil {
+				log.Fatalln("stream send error: ", err)
+				return
+			}
+		}
+		res, err := stream.CloseAndRecv()
+		if err != nil {
+			log.Fatalln("stream close error: ", err)
+			return
+		}
+		fmt.Println((res.GetPong()))
+
 	default:
 		fmt.Println("No Stream Type")
 	}

@@ -11,7 +11,7 @@ service PingPong {
     // ServerStreamingはreturnsにstreamをつける
     rpc PingPongServerStream (PingReqest) returns (stream PingResponse) {}
     // ClientStreamingは引数にstreamをつける
-    //rpc PingPongClientStream (stream PingReqest) returns (PingResponse) {}
+    rpc PingPongClientStream (stream PingReqest) returns (PingResponse) {}
 }
 
 message PingReqest {
